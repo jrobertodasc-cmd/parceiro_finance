@@ -23,7 +23,7 @@ export async function getContas(): Promise<ContaComFornecedor[]> {
     console.error('[getContas]', error.message)
     return []
   }
-  return (data?? []) as ContaComFornecedor[]
+  return (data ?? []) as unknown as ContaComFornecedor[]
 }
 
 export async function getFornecedores(): Promise<{ id: string; nome: string }[]> {
