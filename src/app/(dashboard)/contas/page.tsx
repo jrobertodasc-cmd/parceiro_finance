@@ -34,7 +34,7 @@ export default function ContasPage() {
     vencimento: '',
     fornecedor_id: '',
     plano_conta_id: '',
-    status: 'pendente' as const,
+    status: 'pendente' as 'pendente' | 'pago' | 'vencido',
     empresa_destino_id: ''
   })
   const [editando, setEditando] = useState<string | null>(null)
