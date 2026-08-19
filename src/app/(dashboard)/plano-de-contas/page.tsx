@@ -18,7 +18,7 @@ export default function PlanoDeContasPage() {
   const { empresaAtual } = useEmpresa()
   const [contas, setContas] = useState<PlanoConta[]>([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ codigo: '', nome: '', tipo: 'despesa' as const })
+  const [form, setForm] = useState({ codigo: '', nome: '', tipo: 'despesa' as 'receita' | 'despesa' | 'custo' })
   const [editando, setEditando] = useState<string | null>(null)
   const [busca, setBusca] = useState("")
 
