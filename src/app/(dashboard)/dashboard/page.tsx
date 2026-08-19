@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useEmpresa } from "@/contexts/EmpresaContext"
 
 type Conta = {
   id: string
@@ -36,17 +37,23 @@ function GastosChart({ data }: { data: { name: string, value: number }[] }) {
 
 export default function DashboardPage() {
   const supabase = createClient()
+  const { empresaAtual } = useEmpresa()
   const [contas, setContas] = useState<Conta[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const carregar = async () => {
-      const { data } = await supabase.from('contas_a_pagar').select('*, fornecedores!contas_a_pagar_fornecedor_id_fkey(nome)')
+      if (!empresaAtual) return
+      const { data } = await supabase
+        .from('contas_a_pagar')
+        .select('*, fornecedores!contas_a_pagar_fornecedor_id_fkey(nome)')
+        .eq('empresa_id', empresaAtual.id)
+      
       if (data) setContas(data as any)
       setLoading(false)
     }
     carregar()
-  }, [])
+  }, [empresaAtual])
 
   const totalPendente = contas.filter(c => c.status === 'pendente').reduce((a, b) => a + Number(b.valor), 0)
   const totalPago = contas.filter(c => c.status === 'pago').reduce((a, b) => a + Number(b.valor), 0)

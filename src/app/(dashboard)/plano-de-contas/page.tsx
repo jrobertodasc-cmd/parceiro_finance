@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Pencil, Trash2, Search } from "lucide-react"
+import { useEmpresa } from "@/contexts/EmpresaContext"
 
 type PlanoConta = {
   id: string
@@ -14,6 +15,7 @@ type PlanoConta = {
 
 export default function PlanoDeContasPage() {
   const supabase = createClient()
+  const { empresaAtual } = useEmpresa()
   const [contas, setContas] = useState<PlanoConta[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ codigo: '', nome: '', tipo: 'despesa' as const })
@@ -21,10 +23,12 @@ export default function PlanoDeContasPage() {
   const [busca, setBusca] = useState("")
 
   const carregar = async () => {
+    if (!empresaAtual) return
     setLoading(true)
     const { data, error } = await supabase
       .from('plano_de_contas')
       .select('*')
+      .eq('empresa_id', empresaAtual.id)
       .order('codigo', { ascending: true })
 
     if (error) {
@@ -38,7 +42,7 @@ export default function PlanoDeContasPage() {
 
   useEffect(() => {
     carregar()
-  }, [])
+  }, [empresaAtual])
 
   const salvar = async () => {
     if (!form.codigo.trim() || !form.nome.trim()) {
@@ -62,7 +66,7 @@ export default function PlanoDeContasPage() {
     } else {
       const { error } = await supabase
         .from('plano_de_contas')
-        .insert([{ codigo: form.codigo, nome: form.nome, tipo: form.tipo }])
+        .insert([{ codigo: form.codigo, nome: form.nome, tipo: form.tipo, empresa_id: empresaAtual?.id }])
 
       if (error) {
         alert("Erro ao salvar: " + error.message)

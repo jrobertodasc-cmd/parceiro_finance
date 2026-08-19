@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useEmpresa } from "@/contexts/EmpresaContext"
 import { ChevronLeft, ChevronRight, Bot, CheckCircle2, Clock, AlertTriangle, X, Target } from "lucide-react"
 
 type Conta = {
@@ -26,6 +27,7 @@ type Previsao = {
 
 export default function PrevisaoSemanalPage() {
   const supabase = createClient()
+  const { empresaAtual } = useEmpresa()
   const [loading, setLoading] = useState(true)
   
   // Controle da Semana Atual (Começa na segunda-feira atual)
@@ -51,6 +53,7 @@ export default function PrevisaoSemanalPage() {
   const [planos, setPlanos] = useState<{id: string, codigo: string, nome: string}[]>([])
 
   const carregarDados = async () => {
+    if (!empresaAtual) return
     setLoading(true)
 
     // Data da semana exibida (Segunda a Domingo)
@@ -66,6 +69,7 @@ export default function PrevisaoSemanalPage() {
       .from('plano_de_contas')
       .select('id, codigo, nome')
       .in('codigo', ['1.01.007', '2.01.001', '2.01.002'])
+      .eq('empresa_id', empresaAtual.id)
     
     if (dataPlanos) setPlanos(dataPlanos)
 
@@ -75,6 +79,7 @@ export default function PrevisaoSemanalPage() {
       .select('*, plano_de_contas!contas_a_pagar_plano_conta_id_fkey(codigo,nome)')
       .gte('vencimento', startStr)
       .lte('vencimento', endStr)
+      .eq('empresa_id', empresaAtual.id)
       .order('vencimento')
 
     if (reais) setContasReais(reais)
@@ -88,6 +93,7 @@ export default function PrevisaoSemanalPage() {
       .from('contas_a_pagar')
       .select('descricao, valor, vencimento')
       .gte('vencimento', noventaDiasAtras.toISOString().split('T')[0])
+      .eq('empresa_id', empresaAtual.id)
 
     // Inteligência de Agrupamento JS
     const agrupamento: Record<string, { count: number, total: number, dias: number[] }> = {}
@@ -158,7 +164,7 @@ export default function PrevisaoSemanalPage() {
 
   useEffect(() => {
     carregarDados()
-  }, [dataRef])
+  }, [dataRef, empresaAtual])
 
   const mudarSemana = (dias: number) => {
     const novaRef = new Date(dataRef)
@@ -193,6 +199,7 @@ export default function PrevisaoSemanalPage() {
           valor: editItem.valor,
           vencimento: editItem.vencimento || editItem.vencimentoCalculado,
           plano_conta_id: editItem.plano_conta_id || null,
+          empresa_id: empresaAtual?.id,
           status: 'pendente',
           origem: 'previsao',
           xml_chave: null

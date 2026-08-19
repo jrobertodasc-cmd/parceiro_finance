@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Upload, Trash2, CheckCircle, XCircle, BarChart3, TrendingUp, AlertTriangle, Download, Link as LinkIcon, Plus } from "lucide-react"
+import { useEmpresa } from "@/contexts/EmpresaContext"
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts"
 
 type Extrato = {
@@ -28,6 +29,7 @@ type ContaPagar = {
 
 export default function BiAnaliticoPage() {
   const supabase = createClient()
+  const { empresaAtual } = useEmpresa()
   const [extratos, setExtratos] = useState<Extrato[]>([])
   const [contas, setContas] = useState<ContaPagar[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,24 +37,48 @@ export default function BiAnaliticoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const carregarDados = async () => {
+    if (!empresaAtual) return
     setLoading(true)
+
+    let queryContas = supabase.from('contas_a_pagar').select(`
+      *,
+      fornecedores!contas_a_pagar_fornecedor_id_fkey (nome),
+      plano_de_contas!contas_a_pagar_plano_conta_id_fkey (nome, tipo)
+    `).order('vencimento', { ascending: false })
+
+    if (empresaAtual.cnpj.includes('26.607.445')) {
+      queryContas = queryContas.or(`empresa_id.eq.${empresaAtual.id},empresa_destino_id.eq.${empresaAtual.id}`)
+    } else {
+      queryContas = queryContas.eq('empresa_id', empresaAtual.id)
+    }
+
     const [resExtrato, resContas] = await Promise.all([
-      supabase.from('extrato_bancario').select('*').order('data', { ascending: false }),
-      supabase.from('contas_a_pagar').select(`
-        *,
-        fornecedores!contas_a_pagar_fornecedor_id_fkey (nome),
-        plano_de_contas!contas_a_pagar_plano_conta_id_fkey (nome, tipo)
-      `).order('vencimento', { ascending: false })
+      supabase.from('extrato_bancario').select('*').eq('empresa_id', empresaAtual.id).order('data', { ascending: false }),
+      queryContas
     ])
     
     if (resExtrato.data) setExtratos(resExtrato.data)
-    if (resContas.data) setContas(resContas.data as any)
+    if (resContas.data) {
+      const contasAjustadas = resContas.data.map((c: any) => {
+        if (c.empresa_destino_id === empresaAtual.id && c.empresa_id !== empresaAtual.id) {
+          return {
+            ...c,
+            descricao: "Aporte Recebido da Matriz",
+            valor: -Math.abs(c.valor), // Abate o custo
+            fornecedores: { nome: "Matriz (Intercompany)" },
+            plano_de_contas: { nome: "Aporte Recebido", tipo: "receita" }
+          }
+        }
+        return c
+      })
+      setContas(contasAjustadas as any)
+    }
     setLoading(false)
   }
 
   useEffect(() => {
     carregarDados()
-  }, [])
+  }, [empresaAtual])
 
   // PARSER DE ARQUIVOS NATIVO
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,7 +139,8 @@ export default function BiAnaliticoPage() {
       }
 
       if (parsed.length > 0) {
-        const { error } = await supabase.from('extrato_bancario').insert(parsed)
+        const parsedComEmpresa = parsed.map(p => ({ ...p, empresa_id: empresaAtual?.id }))
+        const { error } = await supabase.from('extrato_bancario').insert(parsedComEmpresa)
         if (error) alert("Erro ao salvar extrato: " + error.message)
         else carregarDados()
       } else {
@@ -130,7 +157,7 @@ export default function BiAnaliticoPage() {
   const limparExtrato = async () => {
     if (!confirm("Tem certeza que deseja apagar todos os lançamentos do extrato?")) return
     setUploading(true)
-    await supabase.from('extrato_bancario').delete().neq('data', '1900-01-01') // Workaround para apagar tudo (qualquer data normal passa)
+    await supabase.from('extrato_bancario').delete().eq('empresa_id', empresaAtual?.id)
     setExtratos([])
     setUploading(false)
     carregarDados()

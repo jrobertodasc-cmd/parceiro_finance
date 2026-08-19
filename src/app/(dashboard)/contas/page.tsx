@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Pencil, Trash2, Search, CheckCircle, Clock, AlertTriangle } from "lucide-react"
+import { useEmpresa } from "@/contexts/EmpresaContext"
 
 type ContaPagar = {
   id: string
@@ -21,6 +22,7 @@ type PlanoConta = { id: string, codigo: string, nome: string }
 
 export default function ContasPage() {
   const supabase = createClient()
+  const { empresaAtual, empresas } = useEmpresa()
   const [contas, setContas] = useState<ContaPagar[]>([])
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
   const [planoContas, setPlanoContas] = useState<PlanoConta[]>([])
@@ -32,7 +34,8 @@ export default function ContasPage() {
     vencimento: '',
     fornecedor_id: '',
     plano_conta_id: '',
-    status: 'pendente' as const
+    status: 'pendente' as const,
+    empresa_destino_id: ''
   })
   const [editando, setEditando] = useState<string | null>(null)
   
@@ -40,6 +43,7 @@ export default function ContasPage() {
   const [busca, setBusca] = useState("")
 
   const carregarContas = async () => {
+    if (!empresaAtual) return
     setLoading(true)
     
     const [resContas, resForn, resPlano] = await Promise.all([
@@ -50,9 +54,10 @@ export default function ContasPage() {
           fornecedores!contas_a_pagar_fornecedor_id_fkey (nome),
           plano_de_contas!contas_a_pagar_plano_conta_id_fkey (codigo,nome)
         `)
+        .eq('empresa_id', empresaAtual.id)
         .order('vencimento', { ascending: false }),
-      supabase.from('fornecedores').select('id, nome').order('nome'),
-      supabase.from('plano_de_contas').select('id, codigo, nome').order('codigo')
+      supabase.from('fornecedores').select('id, nome').eq('empresa_id', empresaAtual.id).order('nome'),
+      supabase.from('plano_de_contas').select('id, codigo, nome').eq('empresa_id', empresaAtual.id).order('codigo')
     ])
 
     if (resContas.data) setContas(resContas.data as any)
@@ -64,7 +69,7 @@ export default function ContasPage() {
 
   useEffect(() => {
     carregarContas()
-  }, [])
+  }, [empresaAtual])
 
   const handleAdicionar = async () => {
     try {
@@ -85,13 +90,21 @@ export default function ContasPage() {
         return 
       }
 
-      const payload = {
+      const isTransferencia = planoContas.find(p => p.id === form.plano_conta_id)?.nome?.toLowerCase().includes('transferência')
+
+      const payload: any = {
         descricao: form.descricao.trim(),
         valor: valorNumerico,
         vencimento: form.vencimento, // yyyy-mm-dd
         status: form.status || 'pendente',
         fornecedor_id: form.fornecedor_id && form.fornecedor_id !== '' ? form.fornecedor_id : null,
-        plano_conta_id: form.plano_conta_id && form.plano_conta_id !== '' ? form.plano_conta_id : null
+        plano_conta_id: form.plano_conta_id && form.plano_conta_id !== '' ? form.plano_conta_id : null,
+        empresa_id: empresaAtual?.id
+      }
+
+      if (isTransferencia) {
+        payload.empresa_origem_id = empresaAtual?.id
+        payload.empresa_destino_id = form.empresa_destino_id && form.empresa_destino_id !== '' ? form.empresa_destino_id : null
       }
 
       if (editando) {
@@ -113,7 +126,7 @@ export default function ContasPage() {
         
         console.log('Atualizou:', data)
         setContas(prev => prev.map(c => c.id === editando ? (data[0] as any) : c))
-        setForm({ descricao: '', valor: '', vencimento: '', fornecedor_id: '', plano_conta_id: '', status: 'pendente' })
+        setForm({ descricao: '', valor: '', vencimento: '', fornecedor_id: '', plano_conta_id: '', status: 'pendente', empresa_destino_id: '' })
         setEditando(null)
       } else {
         const { data, error } = await supabase
@@ -134,7 +147,7 @@ export default function ContasPage() {
         console.log('Salvou:', data)
         setContas(prev => [data[0] as any, ...prev])
         // limpa form
-        setForm({ descricao: '', valor: '', vencimento: '', fornecedor_id: '', plano_conta_id: '', status: 'pendente' })
+        setForm({ descricao: '', valor: '', vencimento: '', fornecedor_id: '', plano_conta_id: '', status: 'pendente', empresa_destino_id: '' })
       }
     } catch (e: any) {
       console.error(e)
@@ -149,7 +162,8 @@ export default function ContasPage() {
       vencimento: conta.vencimento,
       fornecedor_id: conta.fornecedor_id || '',
       plano_conta_id: conta.plano_conta_id || '',
-      status: conta.status
+      status: conta.status,
+      empresa_destino_id: (conta as any).empresa_destino_id || ''
     })
     setEditando(conta.id)
   }
@@ -260,6 +274,19 @@ export default function ContasPage() {
             {planoContas.map(p => <option key={p.id} value={p.id}>{p.codigo} - {p.nome}</option>)}
           </select>
 
+          {planoContas.find(p => p.id === form.plano_conta_id)?.nome?.toLowerCase().includes('transferência') && (
+            <select
+              className="bg-[#0B1120] border border-blue-500/50 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 text-white/70 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
+              value={form.empresa_destino_id}
+              onChange={e => setForm({ ...form, empresa_destino_id: e.target.value })}
+            >
+              <option value="">Empresa de Destino...</option>
+              {empresas.filter(e => e.id !== empresaAtual?.id).map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.razao_social}</option>
+              ))}
+            </select>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={handleAdicionar}
@@ -269,7 +296,7 @@ export default function ContasPage() {
             </button>
             {editando && (
               <button
-                onClick={() => { setEditando(null); setForm({ descricao: '', valor: '', vencimento: '', fornecedor_id: '', plano_conta_id: '', status: 'pendente' }) }}
+                onClick={() => { setEditando(null); setForm({ descricao: '', valor: '', vencimento: '', fornecedor_id: '', plano_conta_id: '', status: 'pendente', empresa_destino_id: '' }) }}
                 className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 Cancelar
