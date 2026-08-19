@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from "@/lib/supabase/client"
 
 export type Empresa = {
   id: string
@@ -24,7 +24,7 @@ export function EmpresaProvider({ children }: { children: React.ReactNode }) {
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [empresaAtual, setEmpresaAtual] = useState<Empresa | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   useEffect(() => {
     async function carregarEmpresas() {

@@ -209,7 +209,7 @@ export default function BiAnaliticoPage() {
       return { ...ext, match: true, matchDesc: match.descricao }
     }
 
-    return { ...ext, match: false }
+    return { ...ext, match: false, matchDesc: "" }
   })
 
   const pctConciliacao = resumoTotal > 0 ? (resumoConciliado / resumoTotal) * 100 : 0
@@ -280,7 +280,7 @@ export default function BiAnaliticoPage() {
   const chartCategorias = Array.from(mapCat.entries()).map(([name, valor]) => ({ name, valor })).sort((a,b) => b.valor - a.valor).slice(0, 10)
 
   // LineChart: Evolução 30 dias (Real vs Previsto)
-  const mapDiario = new Map<string, { Realizado: number, Previsto: number }>()
+  const mapDiario = new Map<string, { Realizado: number, Previsto: number, show?: string }>()
   // Inicializar ultimos 30 dias com 0
   for (let i = 29; i >= 0; i--) {
     const d = new Date(hoje.getTime() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -506,7 +506,7 @@ export default function BiAnaliticoPage() {
                 <RechartsTooltip 
                   cursor={{fill: '#ffffff05'}}
                   contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff20', borderRadius: '8px' }}
-                  formatter={(value: number) => [formatBRL(value), 'Gasto']}
+                  formatter={(value: any) => [formatBRL(value || 0), 'Gasto']}
                 />
                 <Bar dataKey="valor" fill="#3b82f6" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -525,7 +525,7 @@ export default function BiAnaliticoPage() {
                 <YAxis tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} stroke="#ffffff50" fontSize={11} />
                 <RechartsTooltip 
                   contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff20', borderRadius: '8px' }}
-                  formatter={(value: number) => [formatBRL(value), '']}
+                  formatter={(value: any) => [formatBRL(value || 0), '']}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                 <Line type="monotone" name="Realizado (Pago)" dataKey="Realizado" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
