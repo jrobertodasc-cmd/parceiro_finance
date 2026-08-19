@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Upload, Trash2, CheckCircle, XCircle, BarChart3, TrendingUp, AlertTriangle, Download, Link as LinkIcon, Plus } from "lucide-react"
 import { useEmpresa } from "@/contexts/EmpresaContext"
+import { formatBRL } from "@/lib/format"
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts"
 
 type Extrato = {
@@ -314,7 +315,7 @@ export default function BiAnaliticoPage() {
     return { ...r, mediaAntiga, variacao }
   }).filter(r => r.variacao > 0).sort((a,b) => b.variacao - a.variacao).slice(0, 8)
 
-  const formatBRL = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+  // formatBRL importado de lib
 
   if (loading) {
     return <div className="flex-1 flex items-center justify-center min-h-screen text-white/50">Carregando painel analítico...</div>

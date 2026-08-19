@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { UploadCloud, CheckCircle2, ArrowDownRight, ArrowUpRight, Search, FileUp, Trash2, AlertTriangle, Plus } from "lucide-react"
 import Link from "next/link"
+import { formatBRL } from "@/lib/format"
 
 type Extrato = {
   id: string
@@ -294,12 +295,12 @@ export default function ConciliacaoPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[#151F32] border border-white/10 p-5 rounded-2xl">
           <p className="text-white/50 text-sm flex items-center gap-2">Débitos Pendentes</p>
-          <p className="text-2xl font-bold text-red-400 mt-2">R$ {totalDebito.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-red-400 mt-2">{formatBRL(totalDebito)}</p>
           <p className="text-xs text-white/30 mt-1">Saídas aguardando conciliação</p>
         </div>
         <div className="bg-[#151F32] border border-white/10 p-5 rounded-2xl">
           <p className="text-white/50 text-sm">Créditos Pendentes</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-2">R$ {totalCredito.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-emerald-400 mt-2">{formatBRL(totalCredito)}</p>
           <p className="text-xs text-white/30 mt-1">Entradas aguardando conciliação</p>
         </div>
         <div className="bg-[#151F32] border border-white/10 p-5 rounded-2xl">
@@ -382,7 +383,7 @@ export default function ConciliacaoPage() {
                   </div>
                   
                   <div className={`col-span-12 md:col-span-2 font-bold font-mono text-sm ${ex.tipo === 'debito' ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {ex.tipo === 'debito' ? '-' : '+'} R$ {Number(ex.valor).toFixed(2)}
+                    {ex.tipo === 'debito' ? '-' : '+'} {formatBRL(Math.abs(Number(ex.valor)))}
                   </div>
                   
                   <div className="col-span-12 md:col-span-4 w-full">
@@ -411,7 +412,7 @@ export default function ConciliacaoPage() {
                                 id={`select-${ex.id}`}
                               >
                                 {contas.map(c => (
-                                  <option key={c.id} value={c.id}>R$ {c.valor.toFixed(2)} - {c.descricao}</option>
+                                  <option key={c.id} value={c.id}>{formatBRL(c.valor)} - {c.descricao}</option>
                                 ))}
                               </select>
                               <button 
@@ -442,7 +443,7 @@ export default function ConciliacaoPage() {
                               >
                                 <option value="">Ou selecione manualmente...</option>
                                 {contas.map(c => (
-                                  <option key={c.id} value={c.id}>R$ {c.valor.toFixed(2)} - {c.descricao}</option>
+                                  <option key={c.id} value={c.id}>{formatBRL(c.valor)} - {c.descricao}</option>
                                 ))}
                               </select>
                               <Link 

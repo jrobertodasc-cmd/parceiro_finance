@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useEmpresa } from "@/contexts/EmpresaContext"
 import { ChevronLeft, ChevronRight, Bot, CheckCircle2, Clock, AlertTriangle, X, Target } from "lucide-react"
+import { formatBRL } from "@/lib/format"
 
 type Conta = {
   id: string
@@ -241,7 +242,7 @@ export default function PrevisaoSemanalPage() {
         <div className="flex items-center gap-6">
           <div className="text-right">
             <p className="text-sm text-white/50 uppercase tracking-wider">Compromisso Estimado (Semana)</p>
-            <p className="text-2xl font-bold font-mono text-red-400">R$ {saldoEstimado.toFixed(2)}</p>
+            <p className="text-2xl font-bold font-mono text-red-400">{formatBRL(saldoEstimado)}</p>
           </div>
           
           <div className="flex items-center bg-[#151F32] border border-white/10 rounded-xl overflow-hidden shadow-lg">
@@ -328,8 +329,8 @@ export default function PrevisaoSemanalPage() {
                         </div>
                         <p className="text-xs font-bold text-amber-500 mb-1 uppercase tracking-wider">Alerta de Previsão</p>
                         <p className="font-bold text-sm text-white/90 truncate pr-4">{p.descricao}</p>
-                        <p className="font-mono text-amber-400 font-bold mt-2">R$ {p.valor.toFixed(2)}</p>
-                        <p className="text-[10px] text-amber-500/70 mt-2">Média 90d: R$ {p.valor.toFixed(2)}</p>
+                        <p className="font-mono text-amber-400 font-bold mt-2">{formatBRL(p.valor)}</p>
+                        <p className="text-[10px] text-amber-500/70 mt-2">Média 90d: {formatBRL(p.valor)}</p>
                       </div>
                     ))}
 
@@ -363,7 +364,7 @@ export default function PrevisaoSemanalPage() {
                             {c.plano_de_contas && <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-white/50 truncate max-w-[80px]">{c.plano_de_contas.nome}</span>}
                           </div>
                           <p className={`font-bold text-sm truncate ${isPago ? 'line-through text-white/40' : 'text-white/90'}`}>{c.descricao}</p>
-                          <p className={`font-mono font-bold mt-2 ${textValor}`}>R$ {c.valor.toFixed(2)}</p>
+                          <p className={`font-mono font-bold mt-2 ${textValor}`}>{formatBRL(c.valor)}</p>
                         </div>
                       )
                     })}

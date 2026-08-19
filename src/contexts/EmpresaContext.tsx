@@ -27,41 +27,30 @@ export function EmpresaProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
-    async function carregarEmpresas() {
+    async function load() {
       try {
-        const { data, error } = await supabase
-          .from('empresas')
-          .select('*')
-          .order('cnpj')
+        const { data, error } = await supabase.from('empresas').select('*').order('cnpj')
+        console.log('EMPRESAS:', data, 'ERRO:', error)
 
-        if (error) throw error
-        
-        if (data && data.length > 0) {
-          setEmpresas(data)
-          
-          const savedId = localStorage.getItem('empresa_lalua_id')
-          if (savedId) {
-            const savedEmpresa = data.find(e => e.id === savedId)
-            if (savedEmpresa) {
-              setEmpresaAtual(savedEmpresa)
-            } else {
-              setEmpresaAtual(data[0])
-              localStorage.setItem('empresa_lalua_id', data[0].id)
-            }
-          } else {
-            setEmpresaAtual(data[0])
-            localStorage.setItem('empresa_lalua_id', data[0].id)
-          }
+        if (error || !data || data.length === 0) {
+          console.error('Erro ao buscar empresas', error)
+          setLoading(false)
+          return
         }
+
+        setEmpresas(data)
+        const savedId = localStorage.getItem('empresa_lalua_id')
+        const atual = data.find(e => e.id === savedId) || data.find(e => e.cnpj === '10.436.619/0001-05') || data[0]
+        setEmpresaAtual(atual)
+        if (atual) localStorage.setItem('empresa_lalua_id', atual.id)
       } catch (err) {
-        console.error('Erro ao carregar empresas:', err)
+        console.error(err)
       } finally {
         setLoading(false)
       }
     }
-
-    carregarEmpresas()
-  }, [supabase])
+    load()
+  }, [])
 
   const trocarEmpresa = (id: string) => {
     localStorage.setItem('empresa_lalua_id', id)

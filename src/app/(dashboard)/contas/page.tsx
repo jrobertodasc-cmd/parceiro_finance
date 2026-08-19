@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Pencil, Trash2, Search, CheckCircle, Clock, AlertTriangle } from "lucide-react"
 import { useEmpresa } from "@/contexts/EmpresaContext"
+import { formatBRL } from "@/lib/format"
 
 type ContaPagar = {
   id: string
@@ -175,9 +176,7 @@ export default function ContasPage() {
     else setContas(prev => prev.filter(c => c.id !== id))
   }
 
-  const formatCurrency = (valor: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
-  }
+  const formatCurrency = formatBRL
 
   // Lógica de Filtro
   const hoje = new Date().toISOString().split('T')[0]

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useEmpresa } from "@/contexts/EmpresaContext"
+import { formatBRL } from "@/lib/format"
 
 type Conta = {
   id: string
@@ -69,7 +70,8 @@ export default function DashboardPage() {
     }, {})
   ) as { name: string, value: number }[]
 
-  if (loading) return <div className="p-8 text-white/50">Carregando dashboard...</div>
+  if (loading) return <p className="p-8 text-white/50">Carregando empresas...</p>
+  if (!empresaAtual) return <p className="p-8 text-white/50">Selecione uma empresa no topo. Se não aparecer, vá em Supabase &gt; Table Editor &gt; empresas e veja se tem 8 linhas.</p>
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -78,12 +80,12 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-[#151F32] border border-white/10 p-5 rounded-2xl">
           <p className="text-white/50 text-sm flex items-center gap-2">Total Pendente</p>
-          <p className="text-2xl font-bold text-amber-400 mt-2">R$ {totalPendente.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-amber-400 mt-2">{formatBRL(totalPendente)}</p>
           <p className="text-xs text-white/30 mt-1">{contas.filter(c => c.status === 'pendente').length} contas</p>
         </div>
         <div className="bg-[#151F32] border border-white/10 p-5 rounded-2xl">
           <p className="text-white/50 text-sm">Total Pago</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-2">R$ {totalPago.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-emerald-400 mt-2">{formatBRL(totalPago)}</p>
           <p className="text-xs text-white/30 mt-1">{contas.filter(c => c.status === 'pago').length} contas</p>
         </div>
         <div className="bg-[#151F32] border border-white/10 p-5 rounded-2xl">
@@ -112,7 +114,7 @@ export default function DashboardPage() {
                   <div className="w-3 h-3 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
                   <span className="text-sm">{item.name}</span>
                 </div>
-                <span className="font-bold">R$ {item.value.toFixed(2)}</span>
+                <span className="font-bold">{formatBRL(item.value)}</span>
               </div>
             ))}
           </div>

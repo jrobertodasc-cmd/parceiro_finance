@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Calendar, TrendingUp, TrendingDown, DollarSign, Activity, ChevronRight } from "lucide-react"
+import { formatBRL } from "@/lib/format"
 
 type DetalheDRE = {
   codigo: string
@@ -89,9 +90,7 @@ export default function DREPage() {
     carregarDRE()
   }, [mesAno])
 
-  const formatCurrency = (valor: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
-  }
+  const formatCurrency = formatBRL
 
   // Cálculos do DRE
   const receitas = detalhes.filter(d => d.tipo === 'receita')
