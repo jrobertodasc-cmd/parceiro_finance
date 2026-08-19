@@ -62,7 +62,8 @@ export default function DREPage() {
     const agrupado: Record<string, DetalheDRE> = {}
 
     data.forEach(item => {
-      const plano = item.plano_de_contas
+      const planoRaw: any = item.plano_de_contas
+      const plano = Array.isArray(planoRaw) ? planoRaw[0] : planoRaw
       if (!plano) return // Ignora registros sem classificação
 
       const valor = Number(item.valor)
